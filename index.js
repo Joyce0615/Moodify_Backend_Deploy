@@ -2,7 +2,7 @@
 import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 import cors from 'cors';
 import AWS from 'aws-sdk';
 import multer from 'multer';
@@ -55,12 +55,15 @@ app.use(
 app.use(express.json());
 
 // MySql Environment 
-const db = mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-});  
+const db = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+}); 
 
 // Connect MySQL
 db.connect((err) => {
@@ -71,83 +74,74 @@ db.connect((err) => {
   console.log("Connected to MySQL database.");
 });
 
-app.post("/api/signup", (req, res) => {
+app.post("/api/signup", async (req, res) => {
   const { username, password, firstName, lastName, email } = req.body;
 
-  // check user is already exist
-  const checkUserQuery = "SELECT * FROM users WHERE username = ?";
-  db.query(checkUserQuery, [username], (err, results) => {
-    if (err) {
-      console.error("Error querying database:", err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
 
-    if (results.length > 0) {
-      // if existed
+    if (rows.length > 0) {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    // inset new users
-    const insertUserQuery = "INSERT INTO users (username, password, firstName, lastName, email) VALUES (?, ?, ?, ?, ?)";
-    db.query(insertUserQuery, [username, password, firstName, lastName, email], (err, results) => {
-      if (err) {
-        console.error("Error inserting data into MySQL:", err);
-        return res.status(500).json({ error: "Internal server error" });
-      }
-      res.status(201).json({ message: "User registered successfully" });
-    });
-  });
+    const insertQuery = `
+      INSERT INTO users (username, password, firstName, lastName, email)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    await db.query(insertQuery, [username, password, firstName, lastName, email]);
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
+
 //login check with databse
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
-  // check username is alreay exist no not
-  const query = "SELECT * FROM users WHERE username = ?";
-  db.query(query, [username], (err, results) => {
-    if (err) {
-      console.error("Error querying database:", err);
-      return res.status(500).json({ error: "Internal server error" });
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "User not found. Please sign up." });
     }
 
-    if (results.length === 0) {
-      // the user is not existed
-      return res.status(404).json({ message: "User not found. Please sign up." });
-    } 
-
-    // check password
-    const user = results[0];
+    const user = rows[0];
     if (user.password !== password) {
       return res.status(401).json({ message: "Incorrect username or password." });
     }
+
     res.status(200).json({ message: "Login successful" });
-  });
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-app.post("/api/check", (req, res) => {
+app.post("/api/check", async (req, res) => {
   const { username, email } = req.body;
 
-  const query = `SELECT * FROM users WHERE username = ? OR email = ?`;
-  db.query(query, [username, email], (err, results) => {
-    if (err) {
-      console.error("Error querying database:", err);
-      return res.status(500).json({ error: "Internal server error" });
-    }
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
 
-    if (results.length > 0) {
-      if (results[0].username === username) {
+    if (rows.length > 0) {
+      if (rows[0].username === username) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      if (results[0].email === email) {
+      if (rows[0].email === email) {
         return res.status(400).json({ message: "Email already exists" });
       }
     }
+
     res.status(200).json({ message: "Available" });
-  });
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
-
-
 
 // Configure multer for handling file uploads
 const upload = multer();
