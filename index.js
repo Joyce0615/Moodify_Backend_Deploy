@@ -35,11 +35,21 @@ const bucketName = process.env.S3_BUCKET_NAME;
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-
+const allowedOrigins = [
+  "http://localhost:3000",              
+  "https://moodify-music-recommendation.netlify.app" 
+];
 app.use(
   cors({
-    origin: process.env.NETLIFY_URL || "http://localhost:3000",
-    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true, 
   })
 );
 app.use(express.json());
