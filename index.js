@@ -65,15 +65,6 @@ const db = mysql.createPool({
   queueLimit: 0,
 }); 
 
-// Connect MySQL
-db.connect((err) => {
-  if (err) {
-    console.error("Error connecting to MySQL:", err);
-    return;
-  }
-  console.log("Connected to MySQL database.");
-});
-
 app.post("/api/signup", async (req, res) => {
   const { username, password, firstName, lastName, email } = req.body;
 
