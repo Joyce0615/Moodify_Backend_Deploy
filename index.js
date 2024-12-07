@@ -3,7 +3,6 @@ import axios from 'axios';
 import express from 'express';
 import dotenv from 'dotenv';
 import mysql from 'mysql2';
-console.log('mysql2 is loaded');
 import cors from 'cors';
 import AWS from 'aws-sdk';
 import multer from 'multer';
