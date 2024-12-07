@@ -1,0 +1,42 @@
+{
+  "type": "module",
+  "name": "moodify_backend_deploy",
+  "version": "1.0.0",
+  "description": "Node.js HTTP Web server for Moodify application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joyce0615/Moodify_Backend_Deploy.git"
+  },
+  "keywords": [
+    "Node",
+    "REST",
+    "Server",
+    "HTTP",
+    "Web",
+    "development",
+    "CS5500"
+  ],
+  "author": "Group 9",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Joyce0615/Moodify_Backend_Deploy/issues"
+  },
+  "homepage": "https://github.com/Joyce0615/Moodify_Backend_Deploy#readme",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "multer": "^1.4.5-lts.1",
+    "multer-s3": "^3.0.1",
+    "mysql2": "^3.11.4",
+    "openai": "^4.72.0",
+    "winston": "^3.17.0",
+    "zod": "^3.23.8"
+  }
+}
