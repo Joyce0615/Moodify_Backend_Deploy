@@ -328,12 +328,49 @@ function truncateResponseTo100Words(text) {
   return words.length > 100 ? words.slice(0, 100).join(" ") + "..." : text;
 }
 
+function isSensitiveInput(userInput) {
+  const sensitiveKeywords = [
+    "password",
+    "social security number",
+    "credit card",
+    "api key",
+    "private key",
+    "PIN",
+    "security question",
+  ];
+
+  // Check for sensitive keywords
+  for (const keyword of sensitiveKeywords) {
+    if (userInput.toLowerCase().includes(keyword.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // Add additional checks (e.g., regex for credit card numbers)
+  const sensitivePatterns = [
+    /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/, // Credit card pattern
+    /\b[A-Za-z0-9]{32,}\b/, // API key or long strings
+  ];
+
+  for (const pattern of sensitivePatterns) {
+    if (pattern.test(userInput)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 //Chatbot
 app.post("/api/chat", async (req, res) => {
   const { userInput } = req.body;
 
   if (!userInput) {
     return res.status(400).json({ error: "User input is required." });
+  }
+
+  if (isSensitiveInput(userInput)) {
+    return res.status(403).json({ error: "Sensitive information is not allowed." });
   }
 
   const promptTemplate = `
