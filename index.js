@@ -7,6 +7,8 @@ import cors from 'cors';
 import AWS from 'aws-sdk';
 import multer from 'multer';
 import winston from 'winston';
+import nodemailer from 'nodemailer';
+import bodyParser from 'body-parser';
 dotenv.config();
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -375,6 +377,57 @@ app.post("/api/chat", async (req, res) => {
   } catch (error) {
     console.error("OpenAI API Error:", error.message);
     res.status(500).json({ error: "Failed to process your request." });
+  }
+});
+
+// email verification
+
+const sendVerificationEmail = async (email, code) => {
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.gmail_user,
+      pass: process.env.gmail_pass,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.gmail_user,
+    to: email,
+    subject: 'Email Verification',
+    text: `Your verification code is: ${code}`,
+  };
+
+  return transporter.sendMail(mailOptions);
+};
+// Generate random 6-digit code
+const generateCode = () => Math.floor(100000 + Math.random() * 900000);
+
+let verificationCodes = {}; // To store email and code temporarily
+
+app.use(bodyParser.json());
+
+app.post('/api/send-code', async (req, res) => {
+  const { email } = req.body;
+  const code = generateCode();
+  verificationCodes[email] = code;
+
+  try {
+    await sendVerificationEmail(email, code);
+    res.status(200).send({ message: 'Verification code sent.' });
+  } catch (error) {
+    res.status(500).send({ message: 'Failed to send email.' });
+  }
+});
+
+app.post('/api/verify-code', (req, res) => {
+  const { email, code } = req.body;
+
+  if (verificationCodes[email] === parseInt(code)) {
+    delete verificationCodes[email];
+    res.status(200).send({ message: 'Email verified.' });
+  } else {
+    res.status(400).send({ message: 'Invalid code.' });
   }
 });
 
