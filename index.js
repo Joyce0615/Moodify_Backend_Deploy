@@ -213,7 +213,7 @@ app.get('/api/profile', (req, res) => {
 
 //use ai to recommend music
 app.post('/api/recommend',  async (req, res) => {
-  const {activity, mood, time, weather} = req.body;
+  const {activity, mood, time, weather, genre} = req.body;
   logger.info(mood);
   try {
     const completion = await axios.post(
@@ -223,7 +223,7 @@ app.post('/api/recommend',  async (req, res) => {
           messages: [
             {
               role: "system",
-              content: "you are a music expert, user will tell you their mood, activity they are doing, time, and weather. Provide five songs in the following structured JSON format:\n" +
+              content: "you are a music expert, user will tell you their mood, music genre they want to listen, activity they are doing, time, and weather. Provide five songs in the following structured JSON format:\n" +
                   "      [\n" +
                   "        {\n" +
                   "          \"title\": \"Song Title\",\n" +
@@ -233,7 +233,7 @@ app.post('/api/recommend',  async (req, res) => {
                   "        ...\n" +
                   "      ]"
             },
-              {role: "user", content: `I'm ${activity} now and my mood is ${mood}, it's ${time} now and the weather is ${weather}, please recommend some songs to me`}
+              {role: "user", content: `I'm ${activity} now and my mood is ${mood}, it's ${time} now and the weather is ${weather}, I want to listen ${genre} type of songs, please recommend some songs to me`}
           ]
         },
         {
