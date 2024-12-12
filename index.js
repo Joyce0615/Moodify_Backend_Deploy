@@ -381,7 +381,6 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // email verification
-
 const sendVerificationEmail = async (email, code) => {
   const transporter = nodemailer.createTransport({
     service: 'Gmail',
